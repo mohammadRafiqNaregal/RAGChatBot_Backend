@@ -2,21 +2,24 @@
 users_db = [
     {
         "id": 1,
-        "name": "Rafik",
+        "username": "Rafik",
+        "role": "Admin",
         "email": "mdrafik.naregal@gmail.com",
         "age": 28,
         "password": "Rafik@123",
     },
     {
         "id": 2,
-        "name": "Jane Smith",
+        "username": "Jane Smith",
+        "role": "User",
         "email": "jane@example.com",
         "age": 32,
         "password": "jane123",
     },
     {
         "id": 3,
-        "name": "Bob Johnson",
+        "username": "Bob Johnson",
+        "role": "User",
         "email": "bob@example.com",
         "age": 25,
         "password": "bob123",

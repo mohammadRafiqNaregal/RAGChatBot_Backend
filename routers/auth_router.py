@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest):
-    print(f"Received login request for email: {payload.email} {payload.password}")
+    print(f"Received login request for username: {payload.username} {payload.password}")
     return auth_controller.login(payload)
 
 

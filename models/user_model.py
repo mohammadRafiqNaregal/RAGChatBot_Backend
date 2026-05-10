@@ -3,21 +3,21 @@ from typing import Optional
 
 
 class UserCreate(BaseModel):
-    name: str
+    username: str
     email: str
-    age: int
+    role: str
     password: str
 
 
 class UserUpdate(BaseModel):
-    name: Optional[str] = None
+    username: Optional[str] = None
     email: Optional[str] = None
-    age: Optional[int] = None
+    role: Optional[str] = None
     password: Optional[str] = None
 
 
 class UserResponse(BaseModel):
     id: int
-    name: str
+    username: str
     email: str
-    age: int
+    role: str

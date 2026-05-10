@@ -2,18 +2,21 @@ from pydantic import BaseModel, EmailStr
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    # email: EmailStr
+    username: str
     password: str
 
 
 class TokenResponse(BaseModel):
     access_token: str
+    role: str
     token_type: str = "bearer"
     expires_in: int
 
 
 class AuthUserResponse(BaseModel):
     id: int
-    name: str
+    username: str
     email: EmailStr
     age: int
+    role: str

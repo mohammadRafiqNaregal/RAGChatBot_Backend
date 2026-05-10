@@ -40,10 +40,10 @@ def create_user(body: UserCreate):
         )
 
     new_user = {
-        "id":    next_id[0],
-        "name":  body.name,
-        "email": body.email,
-        "age":   body.age,
+        "id":       next_id[0],
+        "username": body.username,
+        "email":    body.email,
+        "role":     body.role,
         "password": body.password,
     }
     users_db.append(new_user)
@@ -60,7 +60,7 @@ def update_user(user_id: int, body: UserUpdate):
         )
     # Only update fields that were actually sent
     user = users_db[index]
-    if body.name  is not None: user["name"]  = body.name
+    if body.username is not None: user["username"] = body.username
     if body.email is not None:
         existing = _find_by_email(body.email)
         if existing and existing["id"] != user_id:
@@ -69,7 +69,7 @@ def update_user(user_id: int, body: UserUpdate):
                 detail=f"User with email '{body.email}' already exists",
             )
         user["email"] = body.email
-    if body.age   is not None: user["age"]   = body.age
+    if body.role   is not None: user["role"]   = body.role
     if body.password is not None: user["password"] = body.password
     return user
 
