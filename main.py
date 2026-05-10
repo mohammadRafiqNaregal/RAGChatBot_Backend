@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from data.init_db import init_db
 from routers import auth_router
 from routers import user_router
 
@@ -26,6 +27,11 @@ if not request_logger.handlers:
     file_handler.setFormatter(logging.Formatter("%(asctime)s | %(message)s"))
     request_logger.addHandler(file_handler)
 request_logger.propagate = False
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    init_db()
 
 origins = [
     "http://localhost:5173",  # Vite frontend

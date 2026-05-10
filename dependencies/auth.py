@@ -4,8 +4,11 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from data.fake_db import users_db
+from data.database import get_db
+from models.user_entity import UserEntity
 
 SECRET_KEY = "super-secret-jwt-key-change-in-production"
 ALGORITHM = "HS256"
@@ -23,16 +26,28 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def _find_by_email(email: str):
-    return next((u for u in users_db if u["email"].lower() == email.lower()), None)
+def _serialize_user(user: UserEntity) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+    }
 
 
-def _find_by_username(username: str):
-    return next((u for u in users_db if u["username"].lower() == username.lower()), None)
+def _find_by_email(db: Session, email: str):
+    statement = select(UserEntity).where(UserEntity.email.ilike(email))
+    return db.scalar(statement)
+
+
+def _find_by_username(db: Session, username: str):
+    statement = select(UserEntity).where(UserEntity.username.ilike(username))
+    return db.scalar(statement)
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
 ):
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
@@ -60,14 +75,14 @@ def get_current_user(
         )
 
     # Current tokens use username in `sub`; fallback supports previously issued email-based tokens.
-    user = _find_by_username(user_subject) or _find_by_email(user_subject)
+    user = _find_by_username(db, user_subject) or _find_by_email(db, user_subject)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
 
-    return user
+    return _serialize_user(user)
 
 
 def require_role(*allowed_roles: str):

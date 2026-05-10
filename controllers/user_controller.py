@@ -1,84 +1,100 @@
 from fastapi import HTTPException, status
-from data.fake_db import users_db, next_id
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from models.user_model import UserCreate, UserUpdate
+from models.user_entity import UserEntity
 
 
-# ── helpers ────────────────────────────────────────────────────────────────
+# ── helpers ──────────────────────────────────────────────────────────────
 
-def _find(user_id: int):
-    return next((u for u in users_db if u["id"] == user_id), None)
+def _to_user_response(user: UserEntity) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+    }
 
-def _find_index(user_id: int):
-    return next((i for i, u in enumerate(users_db) if u["id"] == user_id), None)
+
+def _find(db: Session, user_id: int):
+    return db.get(UserEntity, user_id)
 
 
-def _find_by_email(email: str):
-    return next((u for u in users_db if u["email"].lower() == email.lower()), None)
+def _find_by_email(db: Session, email: str):
+    statement = select(UserEntity).where(UserEntity.email.ilike(email))
+    return db.scalar(statement)
 
 
 # ── controller functions ────────────────────────────────────────────────────
 
-def get_all_users():
-    return users_db
+def get_all_users(db: Session):
+    users = db.scalars(select(UserEntity)).all()
+    return [_to_user_response(user) for user in users]
 
 
-def get_user_by_id(user_id: int):
-    user = _find(user_id)
+def get_user_by_id(db: Session, user_id: int):
+    user = _find(db, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User {user_id} not found"
         )
-    return user
+    return _to_user_response(user)
 
 
-def create_user(body: UserCreate):
-    if _find_by_email(body.email):
+def create_user(db: Session, body: UserCreate):
+    if _find_by_email(db, body.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"User with email '{body.email}' already exists",
         )
 
-    new_user = {
-        "id":       next_id[0],
-        "username": body.username,
-        "email":    body.email,
-        "role":     body.role,
-        "password": body.password,
-    }
-    users_db.append(new_user)
-    next_id[0] += 1
-    return new_user
+    new_user = UserEntity(
+        username=body.username,
+        email=body.email,
+        role=body.role,
+        password=body.password,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return _to_user_response(new_user)
 
 
-def update_user(user_id: int, body: UserUpdate):
-    index = _find_index(user_id)
-    if index is None:
+def update_user(db: Session, user_id: int, body: UserUpdate):
+    user = _find(db, user_id)
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User {user_id} not found"
         )
-    # Only update fields that were actually sent
-    user = users_db[index]
-    if body.username is not None: user["username"] = body.username
+    if body.username is not None:
+        user.username = body.username
     if body.email is not None:
-        existing = _find_by_email(body.email)
-        if existing and existing["id"] != user_id:
+        existing = _find_by_email(db, body.email)
+        if existing and existing.id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"User with email '{body.email}' already exists",
             )
-        user["email"] = body.email
-    if body.role   is not None: user["role"]   = body.role
-    if body.password is not None: user["password"] = body.password
-    return user
+        user.email = body.email
+    if body.role is not None:
+        user.role = body.role
+    if body.password is not None:
+        user.password = body.password
+
+    db.commit()
+    db.refresh(user)
+    return _to_user_response(user)
 
 
-def delete_user(user_id: int):
-    index = _find_index(user_id)
-    if index is None:
+def delete_user(db: Session, user_id: int):
+    user = _find(db, user_id)
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User {user_id} not found"
         )
-    users_db.pop(index)
+    db.delete(user)
+    db.commit()
