@@ -9,8 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from data.init_db import init_db
 from routers import auth_router
-from routers import user_router
 
+from routers import user_router
+from routers import document_router
 # Express:  const app = express()
 app = FastAPI(
     title="User Management API",
@@ -73,8 +74,9 @@ async def log_and_time_requests(request: Request, call_next):
 
 # Express:  app.use('/users', userRouter)
 app.include_router(auth_router.router)  
-app.include_router(user_router.router)
 
+app.include_router(user_router.router)
+app.include_router(document_router.router)
 
 # Express:  app.get('/', (req, res) => res.json({ message: '...' }))
 @app.get("/", tags=["Root"])

@@ -2,6 +2,7 @@ from sqlalchemy import func, select
 
 from data.database import Base, SessionLocal, engine
 from models.user_entity import UserEntity
+from models.document_entity import DocumentEntity
 
 
 def init_db() -> None:
