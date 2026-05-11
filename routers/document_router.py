@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile, status
 from typing import Annotated, List
 from sqlalchemy.orm import Session
 
@@ -27,6 +27,7 @@ async def upload_document(
     section: Annotated[str, Form(description="Document section")] = "",
     tags: Annotated[str, Form(description="Comma-separated tags")] = "",
     allowed_roles: Annotated[str, Form(description="Comma-separated allowed roles")] = "",
+    background_tasks: BackgroundTasks = None,
     db: Annotated[Session, Depends(get_db)] = None,
     current_user: Annotated[dict, Depends(get_current_user)] = None,
 ):
@@ -68,7 +69,13 @@ async def upload_document(
         allowed_roles=allowed_roles_list,
     )
     
-    return await document_controller.upload_document(db, file, metadata, current_user)
+    return await document_controller.upload_document(
+        db,
+        file,
+        metadata,
+        current_user,
+        background_tasks,
+    )
 
 
 @router.get(

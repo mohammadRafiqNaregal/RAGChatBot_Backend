@@ -74,7 +74,6 @@ async def log_and_time_requests(request: Request, call_next):
 
 # Express:  app.use('/users', userRouter)
 app.include_router(auth_router.router)  
-
 app.include_router(user_router.router)
 app.include_router(document_router.router)
 

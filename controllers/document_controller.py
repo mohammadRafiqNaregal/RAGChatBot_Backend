@@ -3,13 +3,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
+from fastapi import BackgroundTasks, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from models.document_model import DocumentCreate, DocumentResponse, DocumentListResponse
 from models.document_entity import DocumentEntity
+from services.document_indexing_service import schedule_document_indexing
 
 
 # Upload directory configuration
@@ -73,6 +74,7 @@ async def upload_document(
     file: UploadFile,
     metadata: DocumentCreate,
     current_user: dict,
+    background_tasks: BackgroundTasks,
 ) -> dict:
     """
     Upload a document file and store it with metadata
@@ -131,6 +133,7 @@ async def upload_document(
         db.add(new_doc)
         db.commit()
         db.refresh(new_doc)
+        schedule_document_indexing(background_tasks, new_doc.id)
         
         return _to_document_response(new_doc)
     
