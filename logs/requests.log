@@ -1,4 +1,0 @@
-2026-05-11 22:48:51,297 | GET / | payload=
-2026-05-11 22:48:51,380 | GET /favicon.ico | payload=
-2026-05-11 22:49:01,341 | GET /docs | payload=
-2026-05-11 22:49:01,825 | GET /openapi.json | payload=

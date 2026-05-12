@@ -8,3 +8,16 @@ wheels/
 
 # Virtual environments
 .venv
+models/manual_model
+
+# macOS / local artifacts
+.DS_Store
+
+# local db/log/index artifacts
+# app.db
+logs/
+# data/faiss_store/
+
+# local model weights
+models/manual_model/*.bin
+models/manual_model/*.safetensors

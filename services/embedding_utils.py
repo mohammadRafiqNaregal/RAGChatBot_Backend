@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer
     - 384-dimensional embeddings'''
 '''model is not working remotely so need to download and use locally'''
 
-DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+DEFAULT_EMBEDDING_MODEL = "models/manual_model"
 DEFAULT_EMBEDDING_DIMENSION = 384
 
 
@@ -15,7 +15,7 @@ _embedding_model: SentenceTransformer | None = None
 def _get_embedding_model(model_name: str = DEFAULT_EMBEDDING_MODEL) -> SentenceTransformer:
     global _embedding_model
     if _embedding_model is None:
-        _embedding_model = SentenceTransformer(model_name)
+        _embedding_model = SentenceTransformer(model_name, local_files_only=True)
     return _embedding_model
 
 
