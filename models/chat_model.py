@@ -29,6 +29,7 @@ class SearchResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, description="User question to answer from indexed documents")
+    conversation_id: str | None = Field(default=None, description="Optional conversation ID for multi-turn context")
     top_k: int = Field(default=4, ge=1, le=10, description="Maximum number of chunks to use as context")
     department: str | None = Field(default=None, description="Optional department filter")
 
@@ -51,3 +52,4 @@ class ChatResponse(BaseModel):
     answer: str
     sources: list[ChatSource]
     context_count: int
+    conversation_id: str | None = None

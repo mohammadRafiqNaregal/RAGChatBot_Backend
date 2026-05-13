@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -33,15 +35,24 @@ def chat_with_documents(db: Session, payload: ChatRequest, current_user: dict) -
         department=payload.department,
     )
 
+    # Generate or use provided conversation_id
+    conversation_id = payload.conversation_id or str(uuid4())
+
     history_item = ChatHistoryEntity(
         user_id=current_user["id"],
+        conversation_id=conversation_id,
         question=payload.message,
         response=answer,
     )
     db.add(history_item)
     db.commit()
 
-    return ChatResponse(answer=answer, sources=sources, context_count=context_count)
+    return ChatResponse(
+        answer=answer,
+        sources=sources,
+        context_count=context_count,
+        conversation_id=conversation_id,
+    )
 
 
 def get_chat_history(db: Session, current_user: dict, limit: int = 20) -> ChatHistoryListResponse:
