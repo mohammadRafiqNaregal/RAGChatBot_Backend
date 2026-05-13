@@ -33,3 +33,5 @@ soo in this case route handling won't work we get unprocessed request error 422 
 \*unprocessed errros means request doesnot even reached router or even after reaching it any missing type or somthing miss match in the request body and the expected pydantic model will cause this error. so we need to make sure that the request body matches the expected pydantic model to avoid this error.
 
 - what if server crashes due to any unavailability of variable that we trigng to access. we need to handle such cases using try-except blocks and return appropriate error messages to the client instead of crashing the server.
+
+\*\* DB data update scripts and etc related standard workflows.

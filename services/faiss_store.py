@@ -1,21 +1,17 @@
-import json
 from pathlib import Path
 from typing import Any
 
-import faiss
-import numpy as np
+from langchain_community.vectorstores import FAISS
 
-from services.embedding_utils import generate_embedding, generate_embeddings
+from services.embedding_utils import get_langchain_embeddings
 
 
 class SimpleFaissStore:
-    """Minimal FAISS wrapper for adding text chunks and searching them back."""
+    """Thin wrapper around LangChain FAISS for adding text chunks and searching them back."""
 
-    def __init__(self, dimension: int) -> None:
+    def __init__(self, dimension: int | None = None) -> None:
         self.dimension = dimension
-        self.index = faiss.IndexFlatIP(dimension)
-        self.texts: list[str] = []
-        self.metadatas: list[dict[str, Any]] = []
+        self.vector_store: FAISS | None = None
 
     def add_texts(
         self,
@@ -29,59 +25,65 @@ class SimpleFaissStore:
         if len(metadata_items) != len(texts):
             raise ValueError("texts and metadatas must have the same length.")
 
-        vectors = np.array(generate_embeddings(texts), dtype="float32")
-        faiss.normalize_L2(vectors)
+        embeddings = get_langchain_embeddings()
+        if self.vector_store is None:
+            self.vector_store = FAISS.from_texts(
+                texts=texts,
+                embedding=embeddings,
+                metadatas=metadata_items,
+            )
+            return
 
-        self.index.add(vectors)
-        self.texts.extend(texts)
-        self.metadatas.extend(metadata_items)
+        self.vector_store.add_texts(texts=texts, metadatas=metadata_items)
 
     def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
-        if not self.texts:
+        if self.vector_store is None:
             return []
 
-        query_vector = np.array([generate_embedding(query)], dtype="float32")
-        faiss.normalize_L2(query_vector)
-
-        scores, indices = self.index.search(query_vector, top_k)
-        results: list[dict[str, Any]] = []
-
-        for score, index in zip(scores[0], indices[0]):
-            if index == -1:
-                continue
-
-            results.append(
-                {
-                    "score": float(score),
-                    "text": self.texts[index],
-                    "metadata": self.metadatas[index],
-                }
-            )
-
-        return results
+        docs_with_scores = self.vector_store.similarity_search_with_score(query, k=top_k)
+        return [
+            {
+                "score": float(score),
+                "text": doc.page_content,
+                "metadata": doc.metadata or {},
+            }
+            for doc, score in docs_with_scores
+        ]
 
     def save(self, folder_path: str = "data/faiss_store") -> None:
+        if self.vector_store is None:
+            return
+
         folder = Path(folder_path)
         folder.mkdir(parents=True, exist_ok=True)
-
-        faiss.write_index(self.index, str(folder / "index.faiss"))
-        payload = {
-            "dimension": self.dimension,
-            "texts": self.texts,
-            "metadatas": self.metadatas,
-        }
-        (folder / "store.json").write_text(
-            json.dumps(payload, ensure_ascii=True, indent=2),
-            encoding="utf-8",
-        )
+        self.vector_store.save_local(folder_path)
 
     @classmethod
     def load(cls, folder_path: str = "data/faiss_store") -> "SimpleFaissStore":
         folder = Path(folder_path)
-        payload = json.loads((folder / "store.json").read_text(encoding="utf-8"))
+        store = cls()
 
-        store = cls(dimension=int(payload["dimension"]))
-        store.index = faiss.read_index(str(folder / "index.faiss"))
-        store.texts = payload.get("texts", [])
-        store.metadatas = payload.get("metadatas", [])
+        # LangChain FAISS persists both files; fall back to rebuilding from legacy store.json if needed.
+        if (folder / "index.faiss").exists() and (folder / "index.pkl").exists():
+            store.vector_store = FAISS.load_local(
+                folder_path,
+                get_langchain_embeddings(),
+                allow_dangerous_deserialization=True,
+            )
+            return store
+
+        legacy_store_file = folder / "store.json"
+        if not legacy_store_file.exists():
+            raise FileNotFoundError(f"No FAISS index found in {folder_path}")
+
+        import json
+
+        payload = json.loads(legacy_store_file.read_text(encoding="utf-8"))
+        texts = payload.get("texts", [])
+        metadatas = payload.get("metadatas", [])
+        if not texts:
+            raise FileNotFoundError(f"Legacy FAISS store in {folder_path} does not contain any texts")
+
+        store.add_texts(texts=texts, metadatas=metadatas)
+        store.save(folder_path)
         return store

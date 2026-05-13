@@ -1,4 +1,7 @@
-from services.llm_service import generate_with_ollama
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+
+from services.llm_service import get_langchain_ollama
 from services.retrieval_service import retrieve_relevant_chunks
 
 
@@ -60,14 +63,15 @@ def answer_question_with_rag(
 
     context = _build_context(results)
 
-    prompt = (
+    prompt_template = PromptTemplate.from_template(
         "You are a helpful enterprise knowledge assistant. "
         "Answer only from the provided context. If the context is insufficient, say so clearly.\n\n"
-        f"Question:\n{message}\n\n"
-        f"Context:\n{context}\n\n"
+        "Question:\n{question}\n\n"
+        "Context:\n{context}\n\n"
         "Give a concise answer and mention key supporting points from context."
     )
 
-    answer = generate_with_ollama(prompt)
+    rag_chain = prompt_template | get_langchain_ollama() | StrOutputParser()
+    answer = rag_chain.invoke({"question": message, "context": context})
     sources = _build_sources(results)
     return answer, sources, len(results)
