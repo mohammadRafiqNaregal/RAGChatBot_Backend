@@ -2,6 +2,7 @@ from sqlalchemy import func, select
 
 from data.database import Base, SessionLocal, engine
 from dependencies.auth import hash_password
+from models.chat_history_entity import ChatHistoryEntity
 from models.user_entity import UserEntity
 from models.document_entity import DocumentEntity
 
