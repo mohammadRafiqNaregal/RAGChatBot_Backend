@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator  # field_validator used by SearchRequest
 
 from models.access_control import normalize_optional_department
 
@@ -31,12 +31,6 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, description="User question to answer from indexed documents")
     conversation_id: str | None = Field(default=None, description="Optional conversation ID for multi-turn context")
     top_k: int = Field(default=4, ge=1, le=10, description="Maximum number of chunks to use as context")
-    department: str | None = Field(default=None, description="Optional department filter")
-
-    @field_validator("department")
-    @classmethod
-    def validate_department(cls, value: str | None) -> str | None:
-        return normalize_optional_department(value)
 
 
 class ChatSource(BaseModel):

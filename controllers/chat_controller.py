@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from models.chat_history_entity import ChatHistoryEntity
 from models.chat_history_model import ChatHistoryListResponse, ChatHistoryResponse
+from models.access_control import role_to_department
 from models.chat_model import ChatRequest, ChatResponse, SearchRequest, SearchResponse, SearchResult
 from services.rag_service import answer_question_with_rag
 from services.retrieval_service import retrieve_relevant_chunks
@@ -28,14 +29,15 @@ def semantic_search(payload: SearchRequest, current_user: dict) -> SearchRespons
 
 
 def chat_with_documents(db: Session, payload: ChatRequest, current_user: dict) -> ChatResponse:
+    department = role_to_department(current_user.get("role"))
     answer, sources, context_count = answer_question_with_rag(
         message=payload.message,
         current_user=current_user,
         top_k=payload.top_k,
-        department=payload.department,
+        department=department,
     )
 
-    # Generate or use provided conversation_id
+    # Reuse the frontend-supplied conversation_id or generate a new one
     conversation_id = payload.conversation_id or str(uuid4())
 
     history_item = ChatHistoryEntity(
@@ -47,12 +49,7 @@ def chat_with_documents(db: Session, payload: ChatRequest, current_user: dict) -
     db.add(history_item)
     db.commit()
 
-    return ChatResponse(
-        answer=answer,
-        sources=sources,
-        context_count=context_count,
-        conversation_id=conversation_id,
-    )
+    return ChatResponse(answer=answer, sources=sources, context_count=context_count, conversation_id=conversation_id)
 
 
 def get_chat_history(db: Session, current_user: dict, limit: int = 20) -> ChatHistoryListResponse:

@@ -55,3 +55,15 @@ def normalize_optional_department(value: str | None) -> str | None:
     if value is None:
         return None
     return normalize_department(value)
+
+
+# Maps a user's role to their scoped department; Admin/Employee return None (no dept filter)
+ROLE_DEPARTMENT_MAP: dict[str, str] = {
+    ROLE_HR_USER: DEPARTMENT_HR,
+    ROLE_FINANCE_USER: DEPARTMENT_FINANCE,
+    ROLE_IT_USER: DEPARTMENT_IT,
+}
+
+
+def role_to_department(role: str | None) -> str | None:
+    return ROLE_DEPARTMENT_MAP.get(role) if role else None
