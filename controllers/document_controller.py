@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from models.document_model import DocumentCreate, DocumentResponse, DocumentListResponse
+from models.access_control import ROLE_ADMIN, normalize_department
 from models.document_entity import DocumentEntity
 from services.document_indexing_service import schedule_document_indexing
 
@@ -89,7 +90,7 @@ async def upload_document(
         Created document response
     """
     # Only Admin can upload
-    if current_user.get("role") != "Admin":
+    if current_user.get("role") != ROLE_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only Admin users can upload documents"
@@ -156,7 +157,7 @@ def get_all_documents(
     """
     user_role = current_user.get("role")
     
-    if user_role == "Admin":
+    if user_role == ROLE_ADMIN:
         # Admin sees all documents
         documents = db.scalars(select(DocumentEntity)).all()
     else:
@@ -188,7 +189,7 @@ def get_document_by_id(
     
     # Check access control
     user_role = current_user.get("role")
-    if user_role != "Admin" and user_role not in doc.allowed_roles:
+    if user_role != ROLE_ADMIN and user_role not in doc.allowed_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not authorized to access this document"
@@ -211,7 +212,7 @@ def delete_document(
         current_user: Current authenticated user
     """
     # Only Admin can delete
-    if current_user.get("role") != "Admin":
+    if current_user.get("role") != ROLE_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only Admin users can delete documents"
@@ -247,11 +248,12 @@ def get_documents_by_department(
     Returns:
         List of documents
     """
+    department = normalize_department(department)
     user_role = current_user.get("role")
     
     query = select(DocumentEntity).where(DocumentEntity.department == department)
     
-    if user_role != "Admin":
+    if user_role != ROLE_ADMIN:
         # Only show docs the user has access to
         docs = db.scalars(query).all()
         docs = [d for d in docs if d.allowed_roles and user_role in d.allowed_roles]

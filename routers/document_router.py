@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from data.database import get_db
 from dependencies.auth import get_current_user
+from models.access_control import ROLE_EMPLOYEE
 from models.document_model import DocumentCreate, DocumentResponse, DocumentListResponse
 import controllers.document_controller as document_controller
 
@@ -59,7 +60,7 @@ async def upload_document(
     """
     # Parse comma-separated values
     tags_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
-    allowed_roles_list = [r.strip() for r in allowed_roles.split(",") if r.strip()] if allowed_roles else ["Employee"]
+    allowed_roles_list = [r.strip() for r in allowed_roles.split(",") if r.strip()] if allowed_roles else [ROLE_EMPLOYEE]
     
     metadata = DocumentCreate(
         title=title,

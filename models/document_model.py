@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
+
+from models.access_control import normalize_department, normalize_roles, normalize_optional_department
 
 
 class DocumentCreate(BaseModel):
@@ -10,6 +12,16 @@ class DocumentCreate(BaseModel):
     section: Optional[str] = Field(None, max_length=255, description="Document section")
     tags: Optional[List[str]] = Field(default_factory=list, description="Tags for document")
     allowed_roles: List[str] = Field(..., description="Roles that can access this document")
+
+    @field_validator("department")
+    @classmethod
+    def validate_department(cls, value: str) -> str:
+        return normalize_department(value)
+
+    @field_validator("allowed_roles")
+    @classmethod
+    def validate_allowed_roles(cls, value: List[str]) -> List[str]:
+        return normalize_roles(value)
 
 
 class DocumentMetadata(BaseModel):
@@ -25,6 +37,16 @@ class DocumentMetadata(BaseModel):
     file_type: str
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("department")
+    @classmethod
+    def validate_department(cls, value: str) -> str:
+        return normalize_department(value)
+
+    @field_validator("allowed_roles")
+    @classmethod
+    def validate_allowed_roles(cls, value: List[str]) -> List[str]:
+        return normalize_roles(value)
 
 
 class DocumentResponse(BaseModel):
@@ -45,6 +67,16 @@ class DocumentResponse(BaseModel):
     class Config:
         from_attributes = True
 
+    @field_validator("department")
+    @classmethod
+    def validate_department(cls, value: str) -> str:
+        return normalize_department(value)
+
+    @field_validator("allowed_roles")
+    @classmethod
+    def validate_allowed_roles(cls, value: List[str]) -> List[str]:
+        return normalize_roles(value)
+
 
 class DocumentListResponse(BaseModel):
     """Lightweight document response for list endpoints"""
@@ -59,3 +91,8 @@ class DocumentListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_validator("department")
+    @classmethod
+    def validate_department(cls, value: str) -> str:
+        return normalize_department(value)

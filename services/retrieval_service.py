@@ -1,5 +1,6 @@
 from services.document_indexing_service import _FAISS_FOLDER
 from services.faiss_store import SimpleFaissStore
+from models.access_control import ROLE_ADMIN, normalize_optional_department
 
 
 def _load_store() -> SimpleFaissStore | None:
@@ -19,6 +20,7 @@ def retrieve_relevant_chunks(
     if store is None:
         return []
 
+    department = normalize_optional_department(department)
     role = current_user.get("role")
     raw_results = store.search(query, top_k=max(top_k * 5, top_k))
 
@@ -30,7 +32,7 @@ def retrieve_relevant_chunks(
             continue
 
         allowed_roles = metadata.get("allowed_roles") or []
-        if role != "Admin" and role not in allowed_roles:
+        if role != ROLE_ADMIN and role not in allowed_roles:
             continue
 
         filtered_results.append(item)

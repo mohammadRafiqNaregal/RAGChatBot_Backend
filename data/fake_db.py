@@ -11,7 +11,7 @@ users_db = [
     {
         "id": 2,
         "username": "Jane Smith",
-        "role": "User",
+        "role": "HR User",
         "email": "jane@example.com",
         "age": 32,
         "password": "jane123",
@@ -19,7 +19,7 @@ users_db = [
     {
         "id": 3,
         "username": "Bob Johnson",
-        "role": "User",
+        "role": "Employee",
         "email": "bob@example.com",
         "age": 25,
         "password": "bob123",

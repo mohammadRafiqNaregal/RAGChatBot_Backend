@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from data.database import get_db
 from dependencies.auth import get_current_user, require_role
+from models.access_control import ROLE_ADMIN
 from models.user_model import UserCreate, UserUpdate, UserResponse
 import controllers.user_controller as user_controller
 
@@ -37,14 +38,14 @@ def get_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
 # Express:  router.post('/', createUser)        body comes from req.body
 # FastAPI:  body: UserCreate  →  FastAPI reads JSON body and validates it automatically
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED,
-             dependencies=[Depends(require_role("Admin"))])
+             dependencies=[Depends(require_role(ROLE_ADMIN))])
 def create_user(body: UserCreate, db: Annotated[Session, Depends(get_db)]):
     return user_controller.create_user(db, body)
 
 
 # Express:  router.put('/:id', updateUser)
 @router.put("/{user_id}", response_model=UserResponse,
-            dependencies=[Depends(require_role("Admin"))])
+            dependencies=[Depends(require_role(ROLE_ADMIN))])
 def update_user(user_id: int, body: UserUpdate, db: Annotated[Session, Depends(get_db)]):
     return user_controller.update_user(db, user_id, body)
 
@@ -52,6 +53,6 @@ def update_user(user_id: int, body: UserUpdate, db: Annotated[Session, Depends(g
 # Express:  router.delete('/:id', deleteUser)
 # status 204 = No Content (same as Express: res.status(204).send())
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[Depends(require_role("Admin"))])
+               dependencies=[Depends(require_role(ROLE_ADMIN))])
 def delete_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
     user_controller.delete_user(db, user_id)

@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from dependencies.auth import hash_password
+from models.access_control import normalize_role
 from models.user_model import UserCreate, UserUpdate
 from models.user_entity import UserEntity
 
@@ -65,7 +66,7 @@ def create_user(db: Session, body: UserCreate):
     new_user = UserEntity(
         username=body.username,
         email=body.email,
-        role=body.role,
+        role=normalize_role(body.role),
         password=hash_password(body.password),
     )
     db.add(new_user)
@@ -98,7 +99,7 @@ def update_user(db: Session, user_id: int, body: UserUpdate):
             )
         user.email = body.email
     if body.role is not None:
-        user.role = body.role
+        user.role = normalize_role(body.role)
     if body.password is not None:
         user.password = hash_password(body.password)
 
