@@ -13,6 +13,7 @@ dependencies = [
     "langchain-text-splitters>=0.3.8",
     "numpy>=2.2.6",
     "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=3.2.0,<4.0.0",
     "PyPDF2>=3.0.1",
     "pyjwt>=2.10.1",
     "pydantic[email]>=2.11.4",
