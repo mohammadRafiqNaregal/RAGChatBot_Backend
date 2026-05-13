@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from dependencies.auth import hash_password
 from models.user_model import UserCreate, UserUpdate
 from models.user_entity import UserEntity
 
@@ -26,6 +27,11 @@ def _find_by_email(db: Session, email: str):
     return db.scalar(statement)
 
 
+def _find_by_username(db: Session, username: str):
+    statement = select(UserEntity).where(UserEntity.username.ilike(username))
+    return db.scalar(statement)
+
+
 # ── controller functions ────────────────────────────────────────────────────
 
 def get_all_users(db: Session):
@@ -44,6 +50,12 @@ def get_user_by_id(db: Session, user_id: int):
 
 
 def create_user(db: Session, body: UserCreate):
+    if _find_by_username(db, body.username):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"User with username '{body.username}' already exists",
+        )
+
     if _find_by_email(db, body.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -54,7 +66,7 @@ def create_user(db: Session, body: UserCreate):
         username=body.username,
         email=body.email,
         role=body.role,
-        password=body.password,
+        password=hash_password(body.password),
     )
     db.add(new_user)
     db.commit()
@@ -70,6 +82,12 @@ def update_user(db: Session, user_id: int, body: UserUpdate):
             detail=f"User {user_id} not found"
         )
     if body.username is not None:
+        existing = _find_by_username(db, body.username)
+        if existing and existing.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"User with username '{body.username}' already exists",
+            )
         user.username = body.username
     if body.email is not None:
         existing = _find_by_email(db, body.email)
@@ -82,7 +100,7 @@ def update_user(db: Session, user_id: int, body: UserUpdate):
     if body.role is not None:
         user.role = body.role
     if body.password is not None:
-        user.password = body.password
+        user.password = hash_password(body.password)
 
     db.commit()
     db.refresh(user)

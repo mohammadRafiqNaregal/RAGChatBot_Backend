@@ -25,3 +25,11 @@ Nikhil S Kesari  [12:52 PM]
 @channel for each one of you working on Agent, keep these in mind move away from AI supervisors to AI orchestrator - you design workflow by setting guardrails reviewing exceptions only. This shift is very important to be successful in Agent-Team engagement.
 
 - thredding concept compare to async programming. thredding is a way to run multiple threads in parallel, while async programming is a way to run multiple tasks concurrently. thredding is more suitable for CPU-bound tasks, while async programming is more suitable for I/O-bound tasks. in our case, we are dealing with I/O-bound tasks, so async programming is more suitable.
+
+\*\* FastAPI recieves JSON data and auto parses it no need of manual parsing unlike express where we need to use body-parser middeelware. and validation is also done using pydantic models, which is a powerful library for data validation and settings management using python type annotations. it provides a way to define the structure of the data and validate it against the defined structure. this helps in ensuring that the data received in the request is in the expected format and contains all the required fields.
+
+soo in this case route handling won't work we get unprocessed request error 422 because the request body does not match the expected pydantic model. we need to change the test to send a username field instead of email, or we need to change the login request model to accept email instead of username.
+
+\*unprocessed errros means request doesnot even reached router or even after reaching it any missing type or somthing miss match in the request body and the expected pydantic model will cause this error. so we need to make sure that the request body matches the expected pydantic model to avoid this error.
+
+- what if server crashes due to any unavailability of variable that we trigng to access. we need to handle such cases using try-except blocks and return appropriate error messages to the client instead of crashing the server.

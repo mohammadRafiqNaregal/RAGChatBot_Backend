@@ -1,6 +1,7 @@
 from sqlalchemy import func, select
 
 from data.database import Base, SessionLocal, engine
+from dependencies.auth import hash_password
 from models.user_entity import UserEntity
 from models.document_entity import DocumentEntity
 
@@ -18,19 +19,19 @@ def init_db() -> None:
                 username="Rafik",
                 role="Admin",
                 email="mdrafik.naregal@gmail.com",
-                password="Rafik@123",
+                password=hash_password("Rafik@123"),
             ),
             UserEntity(
                 username="Jane Smith",
                 role="User",
                 email="jane@example.com",
-                password="jane123",
+                password=hash_password("jane123"),
             ),
             UserEntity(
                 username="Bob Johnson",
                 role="User",
                 email="bob@example.com",
-                password="bob123",
+                password=hash_password("bob123"),
             ),
         ]
 

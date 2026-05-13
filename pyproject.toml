@@ -7,8 +7,12 @@ requires-python = ">=3.12"
 dependencies = [
     "faiss-cpu>=1.11.0",
     "fastapi>=0.136.1",
+    "langchain-community>=0.3.24",
+    "langchain-huggingface>=0.2.0",
+    "langchain-ollama>=0.3.3",
     "langchain-text-splitters>=0.3.8",
     "numpy>=2.2.6",
+    "passlib[bcrypt]>=1.7.4",
     "PyPDF2>=3.0.1",
     "pyjwt>=2.10.1",
     "pydantic[email]>=2.11.4",

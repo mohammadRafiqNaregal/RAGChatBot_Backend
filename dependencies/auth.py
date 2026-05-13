@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
@@ -15,6 +16,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 bearer_scheme = HTTPBearer(auto_error=False)
+password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -24,6 +26,20 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     )
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def hash_password(password: str) -> str:
+    return password_context.hash(password)
+
+
+def is_password_hashed(password: str) -> bool:
+    return password.startswith(("$2a$", "$2b$", "$2y$"))
+
+
+def verify_password(plain_password: str, stored_password: str) -> bool:
+    if is_password_hashed(stored_password):
+        return password_context.verify(plain_password, stored_password)
+    return plain_password == stored_password
 
 
 def _serialize_user(user: UserEntity) -> dict:
