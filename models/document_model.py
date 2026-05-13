@@ -55,6 +55,7 @@ class DocumentResponse(BaseModel):
     filename: str
     title: str
     file_path: str
+    file_url: str
     department: str
     section: Optional[str] = None
     tags: Optional[List[str]] = None
@@ -83,6 +84,7 @@ class DocumentListResponse(BaseModel):
     id: int
     filename: str
     title: str
+    file_url: str
     department: str
     section: Optional[str] = None
     tags: Optional[List[str]] = None

@@ -77,6 +77,7 @@ async def log_and_time_requests(request: Request, call_next):
 app.include_router(auth_router.router)  
 app.include_router(user_router.router)
 app.include_router(document_router.router)
+app.include_router(document_router.uploads_router)
 app.include_router(chat_router.router)
 
 # Express:  app.get('/', (req, res) => res.json({ message: '...' }))

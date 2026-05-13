@@ -5,6 +5,7 @@ from typing import List
 
 from fastapi import BackgroundTasks, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -17,6 +18,12 @@ from services.document_indexing_service import schedule_document_indexing
 # Upload directory configuration
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+_MEDIA_TYPES = {
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".txt": "text/plain; charset=utf-8",
+}
 
 
 def _get_upload_path(filename: str) -> str:
@@ -38,6 +45,32 @@ def _find_document(db: Session, document_id: int) -> DocumentEntity:
     return doc
 
 
+def _find_document_by_stored_filename(db: Session, stored_filename: str) -> DocumentEntity:
+    documents = db.scalars(select(DocumentEntity)).all()
+    for document in documents:
+        if Path(document.file_path).name == stored_filename:
+            return document
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Uploaded file '{stored_filename}' not found",
+    )
+
+
+def _build_file_url(doc: DocumentEntity) -> str:
+    stored_filename = Path(doc.file_path).name
+    return f"/api/uploads/{stored_filename}"
+
+
+def _ensure_document_access(doc: DocumentEntity, current_user: dict) -> None:
+    user_role = current_user.get("role")
+    if user_role != ROLE_ADMIN and user_role not in doc.allowed_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to access this document"
+        )
+
+
 def _to_document_response(doc: DocumentEntity) -> dict:
     """Convert DocumentEntity to response dict"""
     return {
@@ -45,6 +78,7 @@ def _to_document_response(doc: DocumentEntity) -> dict:
         "filename": doc.filename,
         "title": doc.title,
         "file_path": doc.file_path,
+        "file_url": _build_file_url(doc),
         "department": doc.department,
         "section": doc.section,
         "tags": doc.tags or [],
@@ -62,6 +96,7 @@ def _to_document_list_response(doc: DocumentEntity) -> dict:
         "id": doc.id,
         "filename": doc.filename,
         "title": doc.title,
+        "file_url": _build_file_url(doc),
         "department": doc.department,
         "section": doc.section,
         "tags": doc.tags or [],
@@ -186,16 +221,28 @@ def get_document_by_id(
         Document response
     """
     doc = _find_document(db, document_id)
-    
-    # Check access control
-    user_role = current_user.get("role")
-    if user_role != ROLE_ADMIN and user_role not in doc.allowed_roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not authorized to access this document"
-        )
+    _ensure_document_access(doc, current_user)
     
     return _to_document_response(doc)
+
+
+def get_uploaded_file(
+    db: Session,
+    stored_filename: str,
+    current_user: dict,
+) -> FileResponse:
+    doc = _find_document_by_stored_filename(db, stored_filename)
+    _ensure_document_access(doc, current_user)
+
+    file_path = Path(doc.file_path)
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Stored file for document {doc.id} was not found on disk"
+        )
+
+    media_type = _MEDIA_TYPES.get(file_path.suffix.lower())
+    return FileResponse(path=file_path, media_type=media_type, filename=doc.filename)
 
 
 def delete_document(

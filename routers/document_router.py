@@ -1,4 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile, status
+from fastapi.responses import FileResponse
 from typing import Annotated, List
 from sqlalchemy.orm import Session
 
@@ -10,6 +11,12 @@ import controllers.document_controller as document_controller
 
 router = APIRouter(
     prefix="/api/documents",
+    tags=["Documents"],
+    dependencies=[Depends(get_current_user)],
+)
+
+uploads_router = APIRouter(
+    prefix="/api/uploads",
     tags=["Documents"],
     dependencies=[Depends(get_current_user)],
 )
@@ -143,6 +150,18 @@ def get_document_by_id(
     **Response:** Full document metadata including the stored file path
     """
     return document_controller.get_document_by_id(db, document_id, current_user)
+
+
+@uploads_router.get(
+    "/{stored_filename}",
+    summary="View an uploaded document file"
+)
+def get_uploaded_file(
+    stored_filename: str,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[dict, Depends(get_current_user)],
+) -> FileResponse:
+    return document_controller.get_uploaded_file(db, stored_filename, current_user)
 
 
 @router.delete(
