@@ -35,3 +35,5 @@ soo in this case route handling won't work we get unprocessed request error 422 
 - what if server crashes due to any unavailability of variable that we trigng to access. we need to handle such cases using try-except blocks and return appropriate error messages to the client instead of crashing the server.
 
 \*\* DB data update scripts and etc related standard workflows.
+
+- how do you add new colum to a DB table and handle all the related code changes in the codebase. we need to follow a standard workflow for this, which includes creating a new migration script using alembic, updating the SQLAlchemy models to reflect the new column, and then running the migration to update the database schema. we also need to update any code that interacts with that table to handle the new column appropriately.
