@@ -1,4 +1,3 @@
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 
 from services.llm_service import get_langchain_ollama
@@ -71,7 +70,7 @@ def answer_question_with_rag(
         "Give a concise answer and mention key supporting points from context."
     )
 
-    rag_chain = prompt_template | get_langchain_ollama() | StrOutputParser()
-    answer = rag_chain.invoke({"question": message, "context": context})
+    filled_prompt = prompt_template.format(question=message, context=context)
+    answer = get_langchain_ollama().invoke(filled_prompt)
     sources = _build_sources(results)
     return answer, sources, len(results)
